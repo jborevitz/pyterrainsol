@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyterrainsol"
+version = "0.1.0"
+description = "Terrain-corrected solar radiation, PAR and daily light integral"
+requires-python = ">=3.10"
+license = {text = "GPL-3.0-or-later"}
+dependencies = ["numpy>=1.24", "scipy>=1.10"]
+
+[project.optional-dependencies]
+test = ["pytest>=7", "pandas>=2.0"]
+
+[tool.setuptools.packages.find]
+include = ["pyterrainsol*"]
