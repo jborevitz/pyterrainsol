@@ -11,7 +11,13 @@ radiation has to be computed on the actual surface.
 """
 from .geometry import solar_position, daily_radiation
 from .spectral import par_fraction, par_from_components, daily_light_integral
+from .demand import (saturation_vapour_pressure, svp_slope, psychrometric_constant,
+                     energy_partition, net_longwave, net_radiation, priestley_taylor,
+                     clearness_index)
 
 __all__ = ["solar_position","daily_radiation","par_fraction",
-           "par_from_components","daily_light_integral"]
+           "par_from_components","daily_light_integral",
+           "saturation_vapour_pressure","svp_slope","psychrometric_constant",
+           "energy_partition","net_longwave","net_radiation","priestley_taylor",
+           "clearness_index"]
 __version__ = "0.1.0"
