@@ -76,15 +76,17 @@ energy input by about three percentage points year-round.
 by a monthly clearness index of 0.74–0.80 (annual mean 0.760) derived from
 WorldClim's observed radiation climatology. The property boundary is drawn over
 the full catchment rather than clipped to it. **The animated GIF steps every 6th day**,
-which keeps it under 6 MB but makes the dates jump about a week at a time; the
-[mp4](docs/avonside_light_year.mp4) is all 365 days, one frame per day.*
+which keeps it under 6 MB but makes the dates jump about a week at a time; the daily version is
+[avonside_light_year.mp4](https://raw.githubusercontent.com/jborevitz/pyterrainsol/main/docs/avonside_light_year.mp4) — GitHub cannot play
+video inline, so that link opens the file directly and will either play in the browser
+or download, depending on the browser.*
 
 ![A year of evaporative demand](docs/avonside_et_year.gif)
 
 *The same days as potential evapotranspiration in mm. Note the **square-root colour
 scale**: midwinter demand is 0.1–1 mm/day against a summer 5–6, and on a linear
-scale the whole of winter is a blank screen. As above the GIF steps every 6th day;
-the [mp4](docs/avonside_et_year.mp4) is daily.*
+scale the whole of winter is a blank screen. As above the GIF steps every 6th day; the daily
+version is [avonside_et_year.mp4](https://raw.githubusercontent.com/jborevitz/pyterrainsol/main/docs/avonside_et_year.mp4).*
 
 ![Annual potential evapotranspiration at 3 m](docs/annual_et_3m.png)
 
