@@ -85,6 +85,16 @@ scale**: midwinter demand is 0.1–1 mm/day against a summer 5–6, and on a lin
 scale the whole of winter is a blank screen. Full version:
 [`docs/avonside_et_year.mp4`](docs/avonside_et_year.mp4).*
 
+![Annual potential evapotranspiration at 3 m](docs/annual_et_3m.png)
+
+*The year summed into one map. Potential ET spans **318-1103 mm/yr** across 46.3 ha,
+median 900, interquartile range 758-1012. The on-farm histogram is **bimodal**, not a
+smooth gradient: aspect sorts the block into two populations rather than a continuum.
+On slopes steeper than 20 degrees, north-facing ground demands **1071 mm/yr against
+599 for south-facing - a 472 mm gap**, which at this site is most of a year's rainfall.
+Two paddocks the same size, the same soil and the same sky are being asked for very
+different amounts of water.*
+
 The pair is worth watching together because they are not the same movie. Farm-median
 light swings **3.7-fold** between summer and winter; demand swings far harder, because
 the longwave loss of 4.4–4.8 MJ m⁻² d⁻¹ is a near-constant subtraction. In June only
