@@ -83,14 +83,17 @@ or download, depending on the browser.*
 
 ![A year of evaporative demand](docs/avonside_et_year.gif)
 
-*The same days as potential evapotranspiration in mm. Note the **square-root colour
+*The same days as potential evapotranspiration in mm, on the same ramp as the annual
+map below — **blue is where water stays, pale is where it leaves**. January bleaches
+almost white as the whole block gives up water; July holds deep blue, with the
+north-facing slopes showing as the pale patches that are still losing some. Note the **square-root colour
 scale**: midwinter demand is 0.1–1 mm/day against a summer 5–6, and on a linear
 scale the whole of winter is a blank screen. As above the GIF steps every 6th day; the daily
 version is [avonside_et_year.mp4](https://raw.githubusercontent.com/jborevitz/pyterrainsol/main/docs/avonside_et_year.mp4).*
 
 ![Annual potential evapotranspiration at 3 m](docs/annual_et_3m.png)
 
-*The year summed into one map. **Blue is where water stays, pale is where it leaves** - the ramp is inverted relative to the movie above, because an annual total is read as a map of retention rather than of flux. Potential ET spans **318-1103 mm/yr** across 46.3 ha,
+*The year summed into one map, on the same ramp as the movie. Potential ET spans **318-1103 mm/yr** across 46.3 ha,
 median 900, interquartile range 758-1012. The on-farm histogram is **bimodal**, not a
 smooth gradient: aspect sorts the block into two populations rather than a continuum.
 On slopes steeper than 20 degrees, north-facing ground demands **1071 mm/yr against
