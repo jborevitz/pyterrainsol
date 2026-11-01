@@ -87,7 +87,7 @@ scale the whole of winter is a blank screen. Full version:
 
 ![Annual potential evapotranspiration at 3 m](docs/annual_et_3m.png)
 
-*The year summed into one map. Potential ET spans **318-1103 mm/yr** across 46.3 ha,
+*The year summed into one map. **Blue is where water stays, pale is where it leaves** - the ramp is inverted relative to the movie above, because an annual total is read as a map of retention rather than of flux. Potential ET spans **318-1103 mm/yr** across 46.3 ha,
 median 900, interquartile range 758-1012. The on-farm histogram is **bimodal**, not a
 smooth gradient: aspect sorts the block into two populations rather than a continuum.
 On slopes steeper than 20 degrees, north-facing ground demands **1071 mm/yr against
