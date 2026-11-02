@@ -146,6 +146,21 @@ a compass ring rather than a bar for the same reason. Direction opacity scales
 with speed — 0.18 at 4 km/h rising to opaque at 20 km/h — because direction is
 meaningless when nothing is moving, but a hard cut erases real light breezes.*
 
+![The same year as the fitted climatology](docs/wind_year_model.png)
+
+*The nine-term harmonic fit to 2006–2025 evaluated on the same axes — what an
+average year looks like once the weather is averaged out. Opacity here is
+**directional constancy**, the vector-mean speed over the scalar-mean speed,
+which is the right confidence measure for a climatology: it fades where the
+wind has no prevailing direction rather than merely where it is slow. Constancy
+runs 0.00 to 0.81. The steadiest wind of the whole year is midwinter before
+dawn, from 293°; the least steady is a summer evening, which greys out
+completely because there genuinely is no prevailing direction then.*
+
+Compare the two panels and the honest limit of a climatology is visible: the
+fitted speed spans only 6.6–15.1 km/h against an observed 20-minute range of
+0–70.2. It predicts the expectation, never the day.
+
 Two regimes are visible and they matter in opposite directions for water. The
 dark columns through spring are a dry, fast north-westerly; of the steps above
 36 km/h, 89% come from WNW through NNW. The pale pre-noon wedges from December
