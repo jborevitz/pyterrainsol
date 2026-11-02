@@ -130,3 +130,79 @@ gives those faces an early spring.
 
 Climate inputs are WorldClim 2.1 monthly normals at 5 arc-minutes — roughly 10 km, a
 single cell over this farm, and a 1970–2000 baseline.
+
+## What the wind actually does here
+
+The model above has no wind term, so it is worth being concrete about the thing
+it is missing. `data/` holds twenty years of BARRA-C2 wind at the nearest grid
+cell, 10 m and 50 m, at 20-minute steps.
+
+![A year of wind, speed and direction](docs/wind_year_20min.png)
+
+*2025 at 20-minute resolution: 365 days across, 72 steps of the day up, in local
+AEST. Speed above; below, the direction the wind comes from on a **cyclic**
+colormap so that 359° and 1° are the same colour and north carries no seam, with
+a compass ring rather than a bar for the same reason. Direction opacity scales
+with speed — 0.18 at 4 km/h rising to opaque at 20 km/h — because direction is
+meaningless when nothing is moving, but a hard cut erases real light breezes.*
+
+Two regimes are visible and they matter in opposite directions for water. The
+dark columns through spring are a dry, fast north-westerly; of the steps above
+36 km/h, 89% come from WNW through NNW. The pale pre-noon wedges from December
+to March are a slow, humid easterly that rotates to westerly by afternoon — a
+daily rotation absent in June and July. The first raises evaporative demand
+above what this package reports, the second lowers it. A model with no
+aerodynamic term sees neither, so its error changes sign with the season.
+
+### Fitting it, and what survives twenty years
+
+![Twenty years of diurnal cycle and gust shape](docs/wind_20y_structure.png)
+
+A tensor-product harmonic model — annual and diurnal sine and cosine pairs plus
+their interaction, nine terms — explains **10.0% of the variance in speed over
+2006–2025**. Fronts, not the sun, set the wind here: the fitted climatology has
+a standard deviation of 0.74 km/h against a residual of 1.65.
+
+Fitting single years first was a mistake worth recording. **2025 alone gave
+15.3%, and it ranks first of twenty on both goodness of fit and annual
+amplitude** — the most seasonally organised year in the record. Anything
+calibrated on it would have been calibrated on an outlier.
+
+What is reproducible, and what is not:
+
+| quantity | pooled | year-to-year sd | verdict |
+|---|---|---|---|
+| mean speed | 10.56 km/h | 0.36 | solid |
+| diurnal amplitude | 2.33 km/h | 0.19 | solid |
+| diurnal peak hour | 15.7 h AEST | 0.26 h | solid |
+| diurnal amplitude, midsummer | 3.86 km/h | 0.40 | solid |
+| annual amplitude | 1.10 km/h | **0.40** | weak |
+| annual peak day | day 275 | **28 days** | do not interpret |
+
+The diurnal cycle is the predictable part — the left panel is twenty years of
+fitted daily cycles, and they lie almost on top of each other within a season
+while the seasonal amplitude contrast is large and consistent. The annual cycle
+in mean speed is not: its amplitude is the same size as its own year-to-year
+spread, and the fitted peak day ranges from day 216 to day 341 across the
+record. Pooling *lowers* the annual amplitude relative to the mean of per-year
+fits, which only happens when the phase wanders.
+
+### Gust shape is the robust part, and the mean misranks it
+
+Weibull fits by season and six-hour block hold up far better than the harmonics.
+Shape `k` per bin varies year to year by only 0.07–0.24, and the structure in the
+right panel is the same on twenty years as on one: **mornings carry the lowest
+`k` in all four seasons** (1.36–1.63), meaning the most episodic, fattest-tailed
+wind. Afternoons are steadier, because convective mixing puts a floor under them.
+
+This is why wind has to enter as a distribution. Summer afternoons have a
+*higher* scale than spring mornings — 15.7 against 12.0 km/h — and yet **six
+times fewer hours above 30 km/h**, 0.44% against 2.62%, because their `k` is
+2.61 against 1.41. Rank the two by mean wind speed and you get the damage risk
+backwards.
+
+One honest correction from going to twenty years: 2025's tails were about twice
+the climatology. Spring mornings spent 5.0% of hours above 30 km/h in 2025
+against 2.62% over the full record. The *shape* was right; the *rate* was not.
+
+Parameters are in `data/wind_weibull_20y.csv` and `data/wind_harmonic_by_year.csv`.
