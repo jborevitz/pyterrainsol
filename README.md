@@ -161,7 +161,9 @@ aerodynamic term sees neither, so its error changes sign with the season.
 A tensor-product harmonic model — annual and diurnal sine and cosine pairs plus
 their interaction, nine terms — explains **10.0% of the variance in speed over
 2006–2025**. Fronts, not the sun, set the wind here: the fitted climatology has
-a standard deviation of 0.74 km/h against a residual of 1.65.
+a standard deviation of 2.01 km/h against a residual of 6.02, so synoptic
+weather is three times the amplitude of the entire annual plus daily cycle.
+(Total spread is 6.34 km/h, and 2.01² + 6.02² recovers it.)
 
 Fitting single years first was a mistake worth recording. **2025 alone gave
 15.3%, and it ranks first of twenty on both goodness of fit and annual
