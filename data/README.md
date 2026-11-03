@@ -138,3 +138,32 @@ testing. It is not a Bureau of Meteorology product and has not been endorsed by
 the Bureau. Anyone using it in publication should go to the DOI above for the
 licence and citation, and should consider pulling their own extract with
 `fetch_barra_point.py` — it takes about half an hour.
+
+## Regional terrain
+
+`snowy_monaro_dem30_mga55.tif` — 4226 × 4425 cells at 30 m in MGA zone 55
+(EPSG:28355), 133 × 127 km, 195 to 2226 m, covering the Main Range, the Snowy
+and Eucumbene valleys and the Monaro tableland. 21 MB, DEFLATE-compressed,
+tiled, stored as Int16 **decimetres** with a scale factor of 0.1 — any GDAL
+reader applies it, but a reader that ignores scaling will be out by a factor of
+ten, so check your first value. Nodata is `-32768` and covers 0.009% of cells.
+
+It exists because the airborne LiDAR at 845 Avonside covers only 4 × 2 km,
+which runs out after about 2 km of upwind fetch. Anything asking what the air
+crossed before it arrived — the 41 km to Mt Kosciuszko, the Snowy–Eucumbene
+corridor — needs this instead. At 30 m it is far too coarse for farm-scale
+work; use the LiDAR for that.
+
+Regenerate or re-window it with `fetch_copernicus_dem.py`, which downloads nine
+1° tiles, mosaics, reprojects and trims the rotation nodata. About two minutes
+on a decent connection.
+
+Derived from the **Copernicus GLO-30 Digital Elevation Model** (ESA / Airbus
+Defence and Space), free to use with attribution. This GeoTIFF is a convenience
+extract, not an endorsed product.
+
+A caution the numbers earned: all of the wind shelter at this site comes from
+terrain within 1 km. Averaged over the 292–338° gale sector the full 60 km
+horizon angle is 18.38°, and the terrain within 1 km alone gives 18.38° — the
+same number. Everything beyond 25 km, the Main Range included, contributes
+1.4°. This DEM is for air-mass history, not for shelter.
