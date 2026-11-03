@@ -1,10 +1,13 @@
 # pyterrainsol
 
-Terrain-corrected solar radiation: beam, diffuse, PAR and daily light integral.
+Terrain-corrected solar radiation and the evaporative demand that follows from it:
+beam, diffuse, PAR, daily light integral, Priestley-Taylor ET, and the wind
+calculations a Penman-Monteith upgrade would need.
 
 ```python
 from pyterrainsol import (daily_radiation, par_from_components, daily_light_integral,
-                          net_longwave, net_radiation, priestley_taylor)
+                          net_longwave, net_radiation, priestley_taylor,
+                          speed_direction, roughness_length, fit_harmonic, weibull_fit)
 
 beam, diffuse = daily_radiation(slope_deg, aspect_deg, horizon, sky_view,
                                 lat_deg=-36.4355)          # (365, n_cells) MJ/m2/d
@@ -20,172 +23,108 @@ Takes slope, aspect, horizon angles and sky view factor — e.g. from
 [`pylidarterrain`](https://github.com/jborevitz/pylidarterrain) — and returns daily
 shortwave on the inclined, shaded surface.
 
-## Why not a temperature-based proxy
+## What it found at 845 Avonside
 
-Hargreaves and similar run on extraterrestrial radiation and temperature range, so
-they are structurally blind to aspect: a north slope and a south slope at the same
-elevation return identical values. If aspect is meant to drive evaporative demand,
-the radiation has to be computed on the actual inclined, shaded surface.
+46.3 ha in the Snowy Monaro, NSW, 888–1197 m, on a 3 m LiDAR DEM with horizon
+shading at 32 azimuths. Rainfall averages **537 mm/yr** over 2006–2025 against
+**1043 mm/yr** of FAO-56 reference ET — a mean deficit near 506 mm. Read every
+number below against that.
 
-## PAR and shortwave are nearly the same map
-
-A single fixed PAR fraction makes the photosynthesis and evaporation maps identical
-in different units. They separate only because diffuse light is spectrally richer in
-PAR (~0.60) than direct beam (~0.43), so the split is applied per component. The
-resulting spread is real but modest. Say so rather than overselling it.
-
-## Worked example — 47 ha in the Snowy Monaro, NSW
-
-Computed on a **3 m** LiDAR DEM (51,467 cells) with horizon shading at 32 azimuths.
+### Terrain sorts the energy load almost entirely in winter
 
 ![Annual and winter insolation at 3 m](docs/insolation_annual_winter_3m.png)
 
-*Annual total shortwave (3477–8890 MJ m⁻² yr⁻¹, a 2.6-fold span) and the winter
-solstice daily light integral (4.4–31.8 mol photons m⁻² d⁻¹, 7.3-fold). On the summer
-solstice the same ground spans only 1.48-fold, 47.5–70.1 mol m⁻² d⁻¹. Terrain sorts
-the energy load overwhelmingly in winter — so summer differences between paddocks come
-from water, not from aspect.*
+*Annual total shortwave spans 3477–8890 MJ m⁻² yr⁻¹, a 2.6-fold span; the winter
+solstice daily light integral spans 4.4–31.8 mol photons m⁻² d⁻¹, 7.3-fold. On the
+summer solstice the same ground spans only 1.48-fold, 47.5–70.1 mol m⁻² d⁻¹.*
+
+Summer differences between paddocks therefore come from water, not from aspect.
+That is the single most useful thing the radiation model says about managing here.
 
 ![PAR and its share of shortwave](docs/par_and_fraction.png)
 
-*PAR as a fraction of total shortwave spans only 0.450–0.481 across the block.
-Shaded ground earns about 7% more photosynthetic light per unit of evaporative load,
-but the two maps remain roughly 93% the same picture.*
+*PAR as a fraction of total shortwave spans only 0.450–0.481. Shaded ground earns
+about 7% more photosynthetic light per unit evaporative load, but the two maps
+remain roughly 93% the same picture.*
 
-## From light to evaporative demand
+### Demand swings far harder than light
 
-Radiation is a map; temperature is a clock. The Priestley-Taylor partition term
-Δ/(Δ+γ) is the fraction of available energy that leaves the surface as water
-rather than as hot air, and because saturation vapour pressure follows
-Clausius-Clapeyron it climbs steeply with temperature. At Avonside it runs from
-**0.483 in July to 0.680 in January** — a 1.41-fold swing. On any given day every
-cell on the block shares that value to within the 2 °C the 309 m elevation range
-buys, so it varies in time and barely in space, which is the mirror image of
-radiation. That is why a 10 km climate product costs nothing here: it only ever
-supplies the part that does not vary across the farm.
-
-Altitude helps the wrong way. At 1040 m the pressure is 89.6 kPa, so γ is 0.0596
-rather than the sea-level 0.0674, raising the evaporating fraction of any given
-energy input by about three percentage points year-round.
-
-### Two years in the life of one hillside
+The partition term Δ/(Δ+γ) runs **0.483 in July to 0.680 in January**, a 1.41-fold
+swing; light swings 3.7-fold. Demand swings much harder than either, because the
+longwave loss of 4.4–4.8 MJ m⁻² d⁻¹ is nearly constant — **in June only 0.87 of
+7.2 MJ m⁻² d⁻¹ survives as net radiation.**
 
 ![A year of light](docs/avonside_light_year.gif)
 
-*Incoming shortwave, every day of the year, 3 m grid. Clear-sky geometry scaled
-by a monthly clearness index of 0.74–0.80 (annual mean 0.760) derived from
-WorldClim's observed radiation climatology. The property boundary is drawn over
-the full catchment rather than clipped to it. **The animated GIF steps every 6th day**,
-which keeps it under 6 MB but makes the dates jump about a week at a time; the daily version is
-[avonside_light_year.mp4](https://raw.githubusercontent.com/jborevitz/pyterrainsol/main/docs/avonside_light_year.mp4) — GitHub cannot play
-video inline, so that link opens the file directly and will either play in the browser
-or download, depending on the browser.*
+*Incoming shortwave, every day, 3 m grid, clear-sky geometry scaled by a monthly
+clearness index of 0.74–0.80. The boundary is drawn over the full catchment rather
+than clipped to it. The GIF steps every 6th day to stay under 6 MB; daily version:
+[avonside_light_year.mp4](https://raw.githubusercontent.com/jborevitz/pyterrainsol/main/docs/avonside_light_year.mp4).*
 
 ![A year of evaporative demand](docs/avonside_et_year.gif)
 
-*The same days as potential evapotranspiration in mm, on the same ramp as the annual
-map below — **blue is where water stays, pale is where it leaves**. January bleaches
-almost white as the whole block gives up water; July holds deep blue, with the
-north-facing slopes showing as the pale patches that are still losing some. Note the **square-root colour
-scale**: midwinter demand is 0.1–1 mm/day against a summer 5–6, and on a linear
-scale the whole of winter is a blank screen. As above the GIF steps every 6th day; the daily
-version is [avonside_et_year.mp4](https://raw.githubusercontent.com/jborevitz/pyterrainsol/main/docs/avonside_et_year.mp4).*
+*The same days as potential ET — **blue is where water stays, pale is where it
+leaves**. January bleaches almost white; July holds deep blue, the north-facing
+slopes its only pale patches. Square-root colour scale, because midwinter demand is
+0.1–1 mm/day against a summer 5–6. Daily version:
+[avonside_et_year.mp4](https://raw.githubusercontent.com/jborevitz/pyterrainsol/main/docs/avonside_et_year.mp4).*
 
 ![Annual potential evapotranspiration at 3 m](docs/annual_et_3m.png)
 
-*The year summed into one map, on the same ramp as the movie. Potential ET spans **318-1103 mm/yr** across 46.3 ha,
-median 900, interquartile range 758-1012. The on-farm histogram is **bimodal**, not a
-smooth gradient: aspect sorts the block into two populations rather than a continuum.
-On slopes steeper than 20 degrees, north-facing ground demands **1071 mm/yr against
-599 for south-facing - a 472 mm gap**, which at this site is most of a year's rainfall.
-Two paddocks the same size, the same soil and the same sky are being asked for very
-different amounts of water.*
+*Potential ET spans **318–1103 mm/yr**, median 900. The histogram is **bimodal**,
+not a gradient: aspect sorts the block into two populations. On slopes over 20°,
+north-facing ground demands **1071 mm/yr against 599 for south-facing — a 472 mm
+gap, 88% of a year's rainfall.***
 
-The pair is worth watching together because they are not the same movie. Farm-median
-light swings **3.7-fold** between summer and winter; demand swings far harder, because
-the longwave loss of 4.4–4.8 MJ m⁻² d⁻¹ is a near-constant subtraction. In June only
-**0.87 of 7.2 MJ m⁻² d⁻¹** survives as net radiation. Multiply what is left by a
-partition term that has itself fallen by a third and midwinter demand nearly vanishes.
+A flat unobstructed cell at 1040 m gives 953 mm/yr, which SILO's own products at
+this location bracket — `evap_comb` 972, `et_short_crop` 1043 — and ours sits lower
+in the way a higher, cooler cell should.
 
-Over the block, potential ET runs **318–1103 mm/yr, median 900**; a flat unobstructed
-cell at 1040 m gives 953 mm/yr. Watch July in the second movie: the north-facing
-slopes are the only ground losing appreciable water, which is the same effect that
-gives those faces an early spring.
+### By management part
 
-## What this does not do
+The three figures above are WorldClim-forced. Recomputing on SILO daily data, with
+per-cell temperature lapsed at 6.5 °C/km from SILO's 861 m grid point, shifts the
+farm range to **310–1075 mm/yr, median 862**; the drop is the lapse correction.
+Clearness comes out at 0.762 against WorldClim's 0.760.
 
-- **No wind.** Priestley-Taylor has no aerodynamic term; α = 1.26 absorbs a typical
-  advection contribution. That is defensible when net radiation dominates and weakest
-  exactly where this model puts its minimum — midwinter, when Rn is near zero but the
-  air still moves. Treat the winter floor as a lower bound. Wind enters properly only
-  through Penman-Monteith, which needs humidity and wind speed this package does not
-  take.
-- **No weather.** A clear-sky model scaled by a monthly clearness index has no
-  individual cloudy days, so these are climatological days, not a particular year.
-- **No water limit.** This is demand, not actual evapotranspiration — an upper bound
-  on what the atmosphere can take from a well-watered surface. What it does take is a
-  soil water question and belongs in a different package.
-- **Humidity is inferred**, as saturation vapour pressure at the daily minimum
-  temperature, the FAO-56 fallback when nothing is measured.
+| part | area | median grade | % north-facing | potential ET |
+|---|---|---|---|---|
+| Top farm | 11.6 ha | 14% | 22% | 899 mm/yr |
+| Upper forest | 10.2 ha | 48% | 1.5% | **653 mm/yr** |
+| Northerly woodland | 11.8 ha | 30% | 85% | **1018 mm/yr** |
+| Lower forest flats | 12.7 ha | 29% | 5.5% | 809 mm/yr |
 
-Climate inputs are WorldClim 2.1 monthly normals at 5 arc-minutes — roughly 10 km, a
-single cell over this farm, and a 1970–2000 baseline.
+**365 mm/yr separates the thirstiest part from the least thirsty — 68% of annual
+rainfall — and the two extremes share a boundary.** Parts are defined in
+[`pylidarterrain`](https://github.com/jborevitz/pylidarterrain).
 
-## What the wind actually does here
-
-The model above has no wind term, so it is worth being concrete about the thing
-it is missing. `data/` holds twenty years of BARRA-C2 wind at the nearest grid
-cell, 10 m and 50 m, at 20-minute steps.
+### Two wind regimes, pushing water opposite ways
 
 ![A year of wind, speed and direction](docs/wind_year_20min.png)
 
-*2025 at 20-minute resolution: 365 days across, 72 steps of the day up, in local
-AEST. Speed above; below, the direction the wind comes from on a **cyclic**
-colormap so that 359° and 1° are the same colour and north carries no seam, with
-a compass ring rather than a bar for the same reason. Direction opacity scales
-with speed — 0.18 at 4 km/h rising to opaque at 20 km/h — because direction is
-meaningless when nothing is moving, but a hard cut erases real light breezes.*
+*2025 at 20-minute resolution: 365 days across, 72 steps of the day up, local AEST.*
 
 ![The same year as the fitted climatology](docs/wind_year_model.png)
 
-*The nine-term harmonic fit to 2006–2025 evaluated on the same axes — what an
-average year looks like once the weather is averaged out. Opacity here is
-**directional constancy**, the vector-mean speed over the scalar-mean speed,
-which is the right confidence measure for a climatology: it fades where the
-wind has no prevailing direction rather than merely where it is slow. Constancy
-runs 0.00 to 0.81. The steadiest wind of the whole year is midwinter before
-dawn, from 293°; the least steady is a summer evening, which greys out
-completely because there genuinely is no prevailing direction then.*
+*The nine-term harmonic fit to 2006–2025 on the same axes, opacity by directional
+constancy (0.00 to 0.81). The steadiest wind of the year is midwinter before dawn
+from 293°; the least steady is a summer evening, which greys out because there is
+genuinely no prevailing direction then. Fitted speed spans 6.6–15.1 km/h against an
+observed 0–70.2 — a climatology predicts the expectation, never the day.*
 
-Compare the two panels and the honest limit of a climatology is visible: the
-fitted speed spans only 6.6–15.1 km/h against an observed 20-minute range of
-0–70.2. It predicts the expectation, never the day.
-
-Two regimes are visible and they matter in opposite directions for water. The
-dark columns through spring are a dry, fast north-westerly; of the steps above
-36 km/h, 89% come from WNW through NNW. The pale pre-noon wedges from December
-to March are a slow, humid easterly that rotates to westerly by afternoon — a
-daily rotation absent in June and July. The first raises evaporative demand
-above what this package reports, the second lowers it. A model with no
-aerodynamic term sees neither, so its error changes sign with the season.
-
-### Fitting it, and what survives twenty years
+The dark spring columns are a dry, fast north-westerly: of steps above 36 km/h,
+**89% come from WNW through NNW**. The pale pre-noon wedges from December to March
+are a slow, humid easterly rotating westerly by afternoon, a daily rotation absent
+in June and July. The first raises real demand above what this package reports, the
+second lowers it — so **the model's error changes sign with the season.**
 
 ![Twenty years of diurnal cycle and gust shape](docs/wind_20y_structure.png)
 
-A tensor-product harmonic model — annual and diurnal sine and cosine pairs plus
-their interaction, nine terms — explains **10.0% of the variance in speed over
-2006–2025**. Fronts, not the sun, set the wind here: the fitted climatology has
-a standard deviation of 2.01 km/h against a residual of 6.02, so synoptic
-weather is three times the amplitude of the entire annual plus daily cycle.
-(Total spread is 6.34 km/h, and 2.01² + 6.02² recovers it.)
-
-Fitting single years first was a mistake worth recording. **2025 alone gave
-15.3%, and it ranks first of twenty on both goodness of fit and annual
-amplitude** — the most seasonally organised year in the record. Anything
-calibrated on it would have been calibrated on an outlier.
-
-What is reproducible, and what is not:
+The nine-term model explains **10.0% of speed variance over 2006–2025**; climatology
+sd is 2.01 km/h against a residual of 6.02, so synoptic weather is three times the
+amplitude of the whole annual plus daily cycle. **2025 alone gave 15.3% and ranks
+first of twenty on both fit and annual amplitude** — calibrating on it would have
+been calibrating on an outlier.
 
 | quantity | pooled | year-to-year sd | verdict |
 |---|---|---|---|
@@ -196,30 +135,33 @@ What is reproducible, and what is not:
 | annual amplitude | 1.10 km/h | **0.40** | weak |
 | annual peak day | day 275 | **28 days** | do not interpret |
 
-The diurnal cycle is the predictable part — the left panel is twenty years of
-fitted daily cycles, and they lie almost on top of each other within a season
-while the seasonal amplitude contrast is large and consistent. The annual cycle
-in mean speed is not: its amplitude is the same size as its own year-to-year
-spread, and the fitted peak day ranges from day 216 to day 341 across the
-record. Pooling *lowers* the annual amplitude relative to the mean of per-year
-fits, which only happens when the phase wanders.
+Gust shape held up where the harmonics did not. Per-bin Weibull `k` varies year to
+year by only 0.07–0.24, and **mornings carry the lowest `k` in all four seasons**
+(1.36–1.63). Summer afternoons have a *higher* scale than spring mornings, 15.7
+against 12.0 km/h, and yet **six times fewer hours above 30 km/h** — 0.44% against
+2.62% — because `k` is 2.61 against 1.41.
 
-### Gust shape is the robust part, and the mean misranks it
+Median u50/u10 is 1.515, inverting to **z0 ≈ 0.44 m**, ten times rougher than short
+grass. By sector z0 runs 0.296 m (from the south) to 0.449 m (northwest). The ratio
+is 1.473 at midday and 1.573 at night, which would invert to 0.33 and 0.60 m — the
+ground does not get rougher after dark, that is the stable nocturnal boundary layer.
 
-Weibull fits by season and six-hour block hold up far better than the harmonics.
-Shape `k` per bin varies year to year by only 0.07–0.24, and the structure in the
-right panel is the same on twenty years as on one: **mornings carry the lowest
-`k` in all four seasons** (1.36–1.63), meaning the most episodic, fattest-tailed
-wind. Afternoons are steadier, because convective mixing puts a floor under them.
+Parameters: [`data/wind_weibull_20y.csv`](data/wind_weibull_20y.csv) and
+[`data/wind_harmonic_by_year.csv`](data/wind_harmonic_by_year.csv).
 
-This is why wind has to enter as a distribution. Summer afternoons have a
-*higher* scale than spring mornings — 15.7 against 12.0 km/h — and yet **six
-times fewer hours above 30 km/h**, 0.44% against 2.62%, because their `k` is
-2.61 against 1.41. Rank the two by mean wind speed and you get the damage risk
-backwards.
+## Data
 
-One honest correction from going to twenty years: 2025's tails were about twice
-the climatology. Spring mornings spent 5.0% of hours above 30 km/h in 2025
-against 2.62% over the full record. The *shape* was right; the *rate* was not.
+`data/` holds the forcing used above, each with the script that regenerates it:
+twenty years of BARRA-C2 wind at 10 m and 50 m on 20-minute steps, and twenty years
+of SILO daily climate including vapour pressure deficit. See
+[`data/README.md`](data/README.md) for keys, provenance and the traps.
 
-Parameters are in `data/wind_weibull_20y.csv` and `data/wind_harmonic_by_year.csv`.
+## Methods
+
+The conventions this package enforces, the traps it exists to prevent, and what it
+deliberately does not do are in **[`docs/methods.md`](docs/methods.md)**.
+
+Methods and results are kept apart on purpose. The methods travel to any site and
+will be re-checked against new ground and simulated data; the findings above are one
+47 ha property in the Snowy Monaro, some of them specific to it and some likely to
+generalise. Either can then be argued with without disturbing the other.
