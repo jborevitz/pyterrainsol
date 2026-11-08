@@ -149,6 +149,74 @@ ground does not get rougher after dark, that is the stable nocturnal boundary la
 Parameters: [`data/wind_weibull_20y.csv`](data/wind_weibull_20y.csv) and
 [`data/wind_harmonic_by_year.csv`](data/wind_harmonic_by_year.csv).
 
+### Where the wind comes from, and why the mountains are not in the model
+
+![Regional terrain and drainage](docs/regional_dem_drainage.jpg)
+
+*The Main Range is 41.5 km away on a bearing of 268 degrees, almost due west --
+and so sits **outside** the 292.5-337.5 degree sector that carries 89% of the
+steps above 36 km/h. The gales look instead up the Snowy-Eucumbene corridor, a
+1000-1200 m trench between the range and the Monaro tableland. Tracing the Snowy
+from Charlotte Pass with a D8 flow grid: 40.9 km to Lake Jindabyne at 906 m,
+then a straight 15.8 km run to the farm, so air following that line arrives from
+**314 degrees** against a sector centre of 315. Nothing was tuned to produce
+that.*
+
+![Two upwind transects](docs/two_transects.png)
+
+*Due west the air would have to cross a 2203 m crest and descend 1160 m, which
+warms it 11.4 C dry-adiabatically: a 5 C, 80% RH parcel arrives at 16 C and 37%,
+and its vapour pressure deficit goes from 0.17 to 1.16 kPa -- **6.7 times the
+drying power**. That is a lee-wave spill, and it is what a resident means by
+feeling the mountains. The northwest ray is **not** the low road, though: mean
+elevation 1378 m against 1249 m due west.*
+
+**All of this is already in the forcing.** BARRA-C2 runs at 4.4 km, which
+resolves the corridor, and hands us wind at the farm pixel with the channelling
+included. SILO's temperature and humidity are the air mass that actually
+arrived, foehn warming and all. Re-deriving the mountain effect here would be
+re-deriving, badly, what the reanalysis already did. So this package reads the
+regional terrain to *explain* the wind, never to *predict* it.
+
+What a 4.4 km reanalysis cannot contain is the last 500 m. That part is ours.
+
+![Wind exposure at 3 m](docs/farm_sx_3m.png)
+
+*Sx -- the upwind horizon angle over a 500 m fetch, weighted by the strong-wind
+rose -- on the 3 m grid. It spans **-1.9 to +53.8 degrees** across 46 ha. By
+part: top farm **+5.2**, northerly woodland +10.5, lower forest flats +19.3,
+upper forest **+25.6**. The west-facing ridge of the top farm at 1197 m reads
+**-1.73** and the camp spot **+2.60** -- ground where the horizon falls away
+upwind. 5.6 ha, almost all of it in the top farm, sits below 3 degrees.*
+
+Measured, not assumed: **every bit of that shelter comes from within 1 km.**
+Averaged over the gale sector the horizon angle over a 60 km fetch is 18.38
+degrees, and the terrain within 1 km alone gives 18.38 -- the same number. The
+Main Range contributes 1.4. A long fetch is for air-mass history, not shelter.
+
+![Reference ET split into its radiation and wind terms](docs/et_wind_decomposition.png)
+
+*What the wind is worth, from a FAO-56 decomposition on SILO forcing with BARRA
+wind: 1065 mm/yr against SILO's own et_short_crop of 1043, daily r = 0.991. The
+radiation term carries 637 mm/yr and the aerodynamic term 427. Replacing the
+real wind with a fixed 2 m/s moves the **annual** total by only 15 mm -- but by
+-8% on the calmest decile of days and **+18% on the windiest**, and +23% on the
+windiest 5%. The wind term's share peaks in **midwinter at 61%**, when net
+radiation has collapsed and air movement is nearly all the demand there is.*
+
+**The honest gap.** Sx is in degrees of **arc**, and it is pure geometry -- the
+same quantity as a solar horizon angle, computed by the same code. For the sun
+that geometry *is* the physics: when solar elevation drops below the horizon
+angle the beam is blocked, and trigonometry alone converts degrees to MJ/m2. Air
+is a fluid with inertia. It is not blocked below a threshold angle; it separates,
+reattaches, and can accelerate over a crest. There is no cosine law taking Sx to
+m/s, that step is empirical, and this package does not yet make it. For scale,
+reference ET responds at **92 mm/yr per m/s** at 2 m around the 20-year mean, and
+a uniform x0.7 against x1.3 spans 1000 to 1121 mm/yr. The way to close it here is
+two anemometers -- one on the west ridge at -1.7, one in the upper forest at
++25.6 -- and a measured ratio.
+
+
 ## Data
 
 `data/` holds the forcing used above, each with the script that regenerates it:

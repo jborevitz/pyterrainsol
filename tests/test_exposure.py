@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from rasterio.transform import Affine
 
-from pyterrainsol import upwind_profile, horizon_angle, sx, sx_rose
+from pyterrainsol import upwind_profile, horizon_angle, sx, sx_rose, sx_raster
 
 RES = 30.0
 # 100 x 100 grid, 30 m cells, origin at the top-left of a projected CRS
@@ -74,3 +74,34 @@ def test_rose_weighting_follows_the_weights():
                               max_distance=600.0)
     assert plain == pytest.approx(vals.mean())
     assert upwind_heavy == pytest.approx(vals[0], abs=0.3)
+
+
+def test_sx_raster_agrees_with_the_point_function():
+    dem = ramp(np.tan(np.radians(12.0)), 300.0)
+    field = sx_raster(dem, RES, [300.0], max_distance=600.0, step=30.0)
+    point = sx(dem, TR, X0, Y0, 300.0, half_window=7.5, n_rays=3,
+               max_distance=600.0, step=30.0)
+    assert field[50, 50] == pytest.approx(point, abs=0.05)
+
+
+def test_sx_raster_rejects_holes():
+    dem = ramp(0.1, 270.0); dem[10, 10] = np.nan
+    with pytest.raises(ValueError):
+        sx_raster(dem, RES, [270.0], max_distance=120.0)
+
+
+def test_sx_raster_weighting_collapses_to_the_dominant_bearing():
+    dem = ramp(np.tan(np.radians(12.0)), 300.0)
+    both = sx_raster(dem, RES, [300.0, 120.0], weights=[0.99, 0.01],
+                     max_distance=600.0, step=30.0)
+    one = sx_raster(dem, RES, [300.0], max_distance=600.0, step=30.0)
+    assert both[50, 50] == pytest.approx(one[50, 50], abs=0.4)
+
+
+def test_sx_raster_samples_the_adjacent_cell():
+    """A one-cell step adjacent to the point must be seen, not stepped over."""
+    dem = np.full((40, 40), 100.0)
+    dem[:, 19] = 110.0                       # wall one cell west of column 20
+    field = sx_raster(dem, RES, [270.0], max_distance=300.0, step=4 * RES,
+                      sub_rays=(0.0,))       # one ray, so the value is exact
+    assert field[20, 20] == pytest.approx(np.degrees(np.arctan2(10.0, RES)), abs=0.01)

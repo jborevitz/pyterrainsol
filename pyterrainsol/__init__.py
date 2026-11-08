@@ -14,7 +14,7 @@ from .spectral import par_fraction, par_from_components, daily_light_integral
 from .wind import (speed_direction, components, directional_constancy,
                    roughness_length, scale_speed, harmonic_design, fit_harmonic,
                    harmonic_summary, weibull_fit, exceedance)
-from .exposure import upwind_profile, horizon_angle, sx, sx_rose
+from .exposure import upwind_profile, horizon_angle, sx, sx_rose, sx_raster
 from .demand import (saturation_vapour_pressure, svp_slope, psychrometric_constant,
                      energy_partition, net_longwave, net_radiation, priestley_taylor,
                      clearness_index)
@@ -27,5 +27,5 @@ __all__ = ["solar_position","daily_radiation","par_fraction",
            "speed_direction","components","directional_constancy",
            "roughness_length","scale_speed","harmonic_design","fit_harmonic",
            "harmonic_summary","weibull_fit","exceedance",
-           "upwind_profile","horizon_angle","sx","sx_rose"]
+           "upwind_profile","horizon_angle","sx","sx_rose","sx_raster"]
 __version__ = "0.1.0"

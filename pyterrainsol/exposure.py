@@ -109,3 +109,52 @@ def sx_rose(dem, transform, x, y, bearings, weights=None, **kwargs):
     if w.shape != bearings.shape:
         raise ValueError("weights must match bearings")
     return vals, float(np.sum(vals * w) / np.sum(w))
+
+
+def sx_raster(dem, res, bearings, weights=None, max_distance=500.0, step=None,
+              sub_rays=(-7.5, 0.0, 7.5)):
+    """Sx for every cell of a DEM, weighted across a wind rose.
+
+    The point functions above are fine for a handful of sites; a 3 m farm grid
+    needs the whole field at once, so this walks each ray outward one step at a
+    time and keeps a running maximum over the entire array.  Cost is linear in
+    ``len(bearings) * len(sub_rays) * max_distance / step``.
+
+    ``dem`` must be north-up with rows increasing southward -- the usual raster
+    convention -- and must contain no NaNs, since one propagates into every
+    cell downwind of it.  ``weights`` is the share of strong wind arriving from
+    each bearing; omit it for a plain mean.  Each bearing is split across
+    ``sub_rays`` offsets, which stops a single spur controlling a whole sector.
+
+    Returns degrees, same shape as ``dem``: positive is sheltered, negative is
+    ground that falls away upwind.
+    """
+    dem = np.asarray(dem, float)
+    if not np.all(np.isfinite(dem)):
+        raise ValueError("dem contains non-finite values; fill them first")
+    bearings = np.atleast_1d(np.asarray(bearings, float))
+    w = np.ones_like(bearings) if weights is None else np.asarray(weights, float)
+    if w.shape != bearings.shape:
+        raise ValueError("weights must match bearings")
+    if step is None:
+        step = 2.0 * res
+    # Start at the ADJACENT cell, not at `step`.  Sx is dominated by whatever is
+    # nearest, so skipping the first cell to save one sample changed the 3 m
+    # Avonside field by up to 21 deg on gully walls -- a far bigger error than
+    # coarsening `step` anywhere further out.
+    dist = np.arange(res, max_distance + 0.5 * step, step)
+    rows, cols = np.indices(dem.shape, dtype=np.float32)
+
+    out = np.zeros(dem.shape, np.float32)
+    for bearing, weight in zip(bearings, w):
+        for sub in sub_rays:
+            a = np.radians(bearing + sub)
+            dr = -np.cos(a) / res          # rows increase southward
+            dc = np.sin(a) / res
+            run = np.full(dem.shape, -90.0, np.float32)
+            for d in dist:
+                up = map_coordinates(dem, [rows + dr * d, cols + dc * d],
+                                     order=1, mode="nearest")
+                np.maximum(run, np.degrees(np.arctan2(up - dem, d)), out=run)
+            out += (weight / len(sub_rays)) * run
+    return out / w.sum()
