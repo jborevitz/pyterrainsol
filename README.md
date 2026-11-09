@@ -237,8 +237,11 @@ the four parts the correlation between radiation-driven ET and the Sx delta is
 
 *2025, day by day, with the real weather: SILO temperature and humidity, BARRA
 daily-mean wind, terrain-corrected radiation on the 3 m grid with 32-azimuth
-horizon shading. Left is absolute demand; right is the deviation from that same
-day's farm mean, which is where the spatial story lives. Farm-mean demand runs
+horizon shading. Left is absolute demand on a linear 0-10 mm/day scale, white to red; right is
+the deviation from that same day's farm mean, which is where the spatial story
+lives. The scale is deliberately linear and shared between both movies: a
+square-root ramp stretched the near-zero winter values and flattened the summer
+days that actually move the water. Farm-mean demand runs
 **0.22 to 8.01 mm/day** and totals **970 mm**. Every 6th day; the daily version
 is [avonside_et_wind_2025.mp4](https://raw.githubusercontent.com/jborevitz/pyterrainsol/main/docs/avonside_et_wind_2025.mp4).*
 
