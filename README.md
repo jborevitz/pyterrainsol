@@ -54,14 +54,14 @@ swing; light swings 3.7-fold. Demand swings much harder than either, because the
 longwave loss of 4.4–4.8 MJ m⁻² d⁻¹ is nearly constant — **in June only 0.87 of
 7.2 MJ m⁻² d⁻¹ survives as net radiation.**
 
-![A year of light]({{artifact:art_9b7f0920-f607-4048-baaa-ed677178aa71}})
+![A year of light](docs/avonside_light_year.gif)
 
 *Incoming shortwave, every day, 3 m grid, clear-sky geometry scaled by a monthly
 clearness index of 0.74–0.80. The boundary is drawn over the full catchment rather
 than clipped to it. The GIF steps every 6th day to stay under 6 MB; daily version:
 [avonside_light_year.mp4](https://raw.githubusercontent.com/jborevitz/pyterrainsol/main/docs/avonside_light_year.mp4).*
 
-![A year of evaporative demand]({{artifact:art_75c4f2ee-4cdf-4ce5-920a-52fa14b22253}})
+![A year of evaporative demand](docs/avonside_et_year.gif)
 
 *The same days as potential ET — **blue is where water stays, pale is where it
 leaves**. January bleaches almost white; July holds deep blue, the north-facing
@@ -69,7 +69,7 @@ slopes its only pale patches. Square-root colour scale, because midwinter demand
 0.1–1 mm/day against a summer 5–6. Daily version:
 [avonside_et_year.mp4](https://raw.githubusercontent.com/jborevitz/pyterrainsol/main/docs/avonside_et_year.mp4).*
 
-![Annual potential evapotranspiration at 3 m]({{artifact:art_230493cc-94f9-46c8-b146-0dc15a24faa9}})
+![Annual potential evapotranspiration at 3 m](docs/annual_et_3m.png)
 
 *Potential ET spans **318–1103 mm/yr**, median 900. The histogram is **bimodal**,
 not a gradient: aspect sorts the block into two populations. On slopes over 20°,
@@ -100,11 +100,11 @@ rainfall — and the two extremes share a boundary.** Parts are defined in
 
 ### Two wind regimes, pushing water opposite ways
 
-![A year of wind, speed and direction]({{artifact:art_6ab19c66-4a18-480d-a9c9-3ad161fa27dc}})
+![A year of wind, speed and direction](docs/wind_year_20min.png)
 
 *2025 at 20-minute resolution: 365 days across, 72 steps of the day up, local AEST.*
 
-![The same year as the fitted climatology]({{artifact:art_0eec72c8-964b-4508-a2ee-c98e5faf73c5}})
+![The same year as the fitted climatology](docs/wind_year_model.png)
 
 *The nine-term harmonic fit to 2006–2025 on the same axes, opacity by directional
 constancy (0.00 to 0.81). The steadiest wind of the year is midwinter before dawn
@@ -118,7 +118,7 @@ are a slow, humid easterly rotating westerly by afternoon, a daily rotation abse
 in June and July. The first raises real demand above what this package reports, the
 second lowers it — so **the model's error changes sign with the season.**
 
-![Twenty years of diurnal cycle and gust shape]({{artifact:art_81fa8e25-5f87-4caa-9061-87634de891e7}})
+![Twenty years of diurnal cycle and gust shape](docs/wind_20y_structure.png)
 
 The nine-term model explains **10.0% of speed variance over 2006–2025**; climatology
 sd is 2.01 km/h against a residual of 6.02, so synoptic weather is three times the
@@ -162,7 +162,7 @@ then a straight 15.8 km run to the farm, so air following that line arrives from
 **314 degrees** against a sector centre of 315. Nothing was tuned to produce
 that.*
 
-![Two upwind transects]({{artifact:art_e7a2f8ad-bbb5-41a1-9dd1-3fa2fca78c49}})
+![Two upwind transects](docs/two_transects.png)
 
 *Due west the air would have to cross a 2203 m crest and descend 1160 m, which
 warms it 11.4 C dry-adiabatically: a 5 C, 80% RH parcel arrives at 16 C and 37%,
@@ -180,7 +180,7 @@ regional terrain to *explain* the wind, never to *predict* it.
 
 What a 4.4 km reanalysis cannot contain is the last 500 m. That part is ours.
 
-![Wind exposure at 3 m]({{artifact:art_9a16b964-1519-44a3-97ea-46d3a1879296}})
+![Wind exposure at 3 m](docs/farm_sx_3m.png)
 
 *Sx -- the upwind horizon angle over a 500 m fetch, weighted by the strong-wind
 rose -- on the 3 m grid. It spans **-1.9 to +53.8 degrees** across 46 ha. By
@@ -194,7 +194,7 @@ Averaged over the gale sector the horizon angle over a 60 km fetch is 18.38
 degrees, and the terrain within 1 km alone gives 18.38 -- the same number. The
 Main Range contributes 1.4. A long fetch is for air-mass history, not shelter.
 
-![Reference ET split into its radiation and wind terms]({{artifact:art_8d3b6c17-4efd-4cbb-9fd3-1cd87c707f70}})
+![Reference ET split into its radiation and wind terms](docs/et_wind_decomposition.png)
 
 *What the wind is worth, from a FAO-56 decomposition on SILO forcing with BARRA
 wind: 1065 mm/yr against SILO's own et_short_crop of 1043, daily r = 0.991. The
@@ -219,7 +219,7 @@ two anemometers -- one on the west ridge at -1.7, one in the upper forest at
 
 ### Sx in millimetres, and a year of it
 
-![Wind exposure converted to water]({{artifact:art_4039c35c-6a5a-40b4-b848-a7760e5458c5}})
+![Wind exposure converted to water](docs/sx_et_delta_3m.png)
 
 *Converting Sx to a wind multiplier is the one step with no physics in it, so
 this is a declared scenario rather than a calibration: multiplier =
@@ -233,7 +233,7 @@ the four parts the correlation between radiation-driven ET and the Sx delta is
 **+0.84**, the ranking does not change, and the between-part spread widens from
 365 to **427 mm/yr**. The driest part gets drier.
 
-![A year of demand, 2025]({{artifact:art_e0675b3f-0009-4bca-b127-ec7c1448a65c}})
+![A year of demand, 2025](docs/avonside_et_wind_2025.gif)
 
 *2025, day by day, with the real weather: SILO temperature and humidity, BARRA
 daily-mean wind, terrain-corrected radiation on the 3 m grid with 32-azimuth
@@ -252,7 +252,7 @@ be tracking the smaller of the two signals. Splitting the farm-mean series into
 a smooth seasonal curve plus a remainder puts **47% of the variability in
 weather rather than season**.
 
-![The average year]({{artifact:art_727fc06a-a377-4f0d-88ed-118dd401ec89}})
+![The average year](docs/avonside_et_climatology.gif)
 
 *The same model driven by a 3-harmonic fit to twenty years of forcing — the year
 the site has on average, with the weather removed. **904 mm** against 970 for
