@@ -158,3 +158,114 @@ def sx_raster(dem, res, bearings, weights=None, max_distance=500.0, step=None,
                 np.maximum(run, np.degrees(np.arctan2(up - dem, d)), out=run)
             out += (weight / len(sub_rays)) * run
     return out / w.sum()
+
+
+# --- a physical terrain-to-wind-speed transfer -----------------------------
+#
+# Everything above measures SHELTER: Sx is the angle to the highest upwind
+# obstruction, so its zero means "nothing upwind" and it has no mechanism for
+# speed-up above the free stream.  Converting it to a wind multiplier requires
+# an arbitrary re-centring, and the resulting values above 1.0 assert an
+# acceleration the index never measured.
+#
+# The functions below take the other route, the one with a physical anchor:
+# local slope in the wind direction and local curvature, after Liston & Elder
+# (2006, J. Hydrometeorology 7, 217-234) -- the MicroMet terrain weighting.
+# Convex ground and windward faces accelerate the flow, concavities and lee
+# faces decelerate it, and the scheme is two-sided, so it nearly conserves the
+# mean over any area containing both.
+
+
+def slope_aspect(dem, res):
+    """Slope (radians) and downslope aspect (degrees from north) of `dem`.
+
+    Aspect follows the compass convention used throughout the package: the
+    direction the ground FACES, so a west-facing slope reads about 270.
+    """
+    z = np.asarray(dem, float)
+    gy, gx = np.gradient(z, res, res)
+    dzdx, dzdy = gx, -gy                       # to east-positive, north-positive
+    slope = np.arctan(np.hypot(dzdx, dzdy))
+    # The gradient points uphill, so downhill is (-dzdx, -dzdy).  Azimuth is
+    # clockwise from north, i.e. atan2(east component, north component).
+    # Swapping these two arguments rotates aspect by exactly 90 degrees, which
+    # silently ZEROES any slope-in-wind-direction term computed from it: the
+    # result stays symmetric about a crest and so looks plausible rather than
+    # broken.  Pinned by test_slope_aspect_compass_convention.
+    aspect = (np.degrees(np.arctan2(-dzdx, -dzdy)) + 360.0) % 360.0
+    return slope, aspect
+
+
+def curvature(dem, res, length_scale=150.0):
+    """MicroMet topographic curvature at `length_scale` metres.
+
+    The mean, over four direction pairs (W-E, S-N and both diagonals), of the
+    cell's elevation less the mean of its two neighbours at that separation,
+    normalised by twice the separation.  Convex ground (ridges, crests, spur
+    noses) is POSITIVE; concave ground (gullies, hollows) is negative.
+
+    `length_scale` should be roughly half the wavelength of the terrain
+    features that matter.  At 845 Avonside the result is insensitive to it:
+    the west-minus-east aspect contrast holds between 0.14 and 0.19 for any
+    value from 30 to 600 m, so the choice sets detail, not the answer.
+
+    Neighbours are fetched with edge replication, NOT ``np.roll``: at a 150 m
+    offset on a 3 m grid the stencil reaches 50 cells, and a wrapped neighbour
+    imports terrain from the opposite side of the window.  At 845 Avonside the
+    farm mask touches the bottom edge of the DEM window with no margin at all,
+    where wrapping corrupted 13% of farm cells by up to 0.294 against a true
+    field range of 0.122 -- a solid block of extreme values in one corner.
+    """
+    z = np.asarray(dem, float)
+    k = max(1, int(round(length_scale / res)))
+    zp_ = np.pad(z, k, mode="edge")
+    ny, nx = z.shape
+    out = np.zeros_like(z)
+    for dr, dc in ((0, k), (k, 0), (k, k), (k, -k)):
+        a = zp_[k + dr:k + dr + ny, k + dc:k + dc + nx]
+        b = zp_[k - dr:k - dr + ny, k - dc:k - dc + nx]
+        out += (z - 0.5 * (a + b)) / (2.0 * np.hypot(dr, dc) * res)
+    return out / 4.0
+
+
+def micromet_weight(dem, res, bearings, weights=None, length_scale=150.0,
+                    gamma_slope=0.58, gamma_curvature=0.42, scale_mask=None):
+    """Wind speed multiplier from terrain, after Liston & Elder (2006).
+
+    ``W = 1 + gamma_slope * Omega_s + gamma_curvature * Omega_c``, where
+    Omega_s is the slope in the wind direction and Omega_c the curvature, each
+    scaled to +/- 0.5 by dividing by twice its maximum absolute value.  The
+    published weights 0.58 and 0.42 sum to one, so W is bounded by 0.5 and 1.5.
+
+    `bearings` are the directions the wind comes FROM, in degrees; `weights`
+    their relative frequency (equal if omitted), which is how a wind rose is
+    folded in.  `scale_mask` restricts the normalisation to a region of
+    interest -- important when `dem` is a padded window, since otherwise a few
+    extreme cells outside the area you care about set the scaling for all of it.
+
+    Returns an array shaped like `dem`.  Note that the scaling is
+    DOMAIN-DEPENDENT by construction: the same terrain normalised over a
+    different extent gives different numbers, so W is a relative redistribution
+    of a reference wind, not an absolute speed.
+    """
+    z = np.asarray(dem, float)
+    b = np.atleast_1d(np.asarray(bearings, float))
+    w = np.ones_like(b) if weights is None else np.atleast_1d(np.asarray(weights, float))
+    if w.shape != b.shape:
+        raise ValueError("bearings and weights must have the same shape")
+
+    slope, aspect = slope_aspect(z, res)
+    curv = curvature(z, res, length_scale)
+    m = np.ones(z.shape, bool) if scale_mask is None else np.asarray(scale_mask, bool)
+    smax = np.abs(slope[m]).max()
+    cmax = np.abs(curv[m]).max()
+    if smax == 0 or cmax == 0:
+        raise ValueError("flat DEM: terrain weighting is undefined")
+    omega_c = curv / (2.0 * cmax)
+
+    out = np.zeros_like(z)
+    for bearing, weight in zip(b, w):
+        # positive where the ground rises INTO the wind
+        omega_s = slope * np.cos(np.deg2rad(bearing) - np.deg2rad(aspect)) / (2.0 * smax)
+        out += weight * (1.0 + gamma_slope * omega_s + gamma_curvature * omega_c)
+    return out / w.sum()

@@ -14,18 +14,22 @@ from .spectral import par_fraction, par_from_components, daily_light_integral
 from .wind import (speed_direction, components, directional_constancy,
                    roughness_length, scale_speed, harmonic_design, fit_harmonic,
                    harmonic_summary, weibull_fit, exceedance)
-from .exposure import upwind_profile, horizon_angle, sx, sx_rose, sx_raster
+from .exposure import (upwind_profile, horizon_angle, sx, sx_rose, sx_raster,
+                       slope_aspect, curvature, micromet_weight)
 from .demand import (saturation_vapour_pressure, svp_slope, psychrometric_constant,
                      energy_partition, net_longwave, net_radiation, priestley_taylor,
+                     vapour_pressure_deficit, wind_at_2m, penman_monteith,
                      clearness_index)
 
 __all__ = ["solar_position","daily_radiation","par_fraction",
            "par_from_components","daily_light_integral",
            "saturation_vapour_pressure","svp_slope","psychrometric_constant",
            "energy_partition","net_longwave","net_radiation","priestley_taylor",
+           "vapour_pressure_deficit","wind_at_2m","penman_monteith",
            "clearness_index",
            "speed_direction","components","directional_constancy",
            "roughness_length","scale_speed","harmonic_design","fit_harmonic",
            "harmonic_summary","weibull_fit","exceedance",
-           "upwind_profile","horizon_angle","sx","sx_rose","sx_raster"]
+           "upwind_profile","horizon_angle","sx","sx_rose","sx_raster",
+           "slope_aspect","curvature","micromet_weight"]
 __version__ = "0.1.0"

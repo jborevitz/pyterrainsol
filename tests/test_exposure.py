@@ -1,4 +1,5 @@
 import numpy as np
+import pyterrainsol.exposure as micromet
 import pytest
 from rasterio.transform import Affine
 
@@ -105,3 +106,113 @@ def test_sx_raster_samples_the_adjacent_cell():
     field = sx_raster(dem, RES, [270.0], max_distance=300.0, step=4 * RES,
                       sub_rays=(0.0,))       # one ray, so the value is exact
     assert field[20, 20] == pytest.approx(np.degrees(np.arctan2(10.0, RES)), abs=0.01)
+
+
+# --- MicroMet terrain weighting (Liston & Elder 2006) ----------------------
+
+def _ridge(n=241, res=10.0, height=120.0, half_width=300.0):
+    """A smooth north-south ridge, so east and west faces are symmetric."""
+    x = (np.arange(n) - n // 2) * res
+    prof = height / (1.0 + (x / half_width) ** 2)
+    return np.tile(prof, (n, 1))
+
+
+def test_slope_aspect_compass_convention():
+    # Ground falling to the west must read aspect ~270 (the way it faces).
+    n, res = 41, 10.0
+    z = np.tile(np.arange(n) * res * 0.2, (n, 1))      # rises to the east
+    slope, aspect = micromet.slope_aspect(z, res)
+    assert np.degrees(slope[20, 20]) == pytest.approx(np.degrees(np.arctan(0.2)), abs=0.5)
+    assert aspect[20, 20] == pytest.approx(270.0, abs=1.0)
+
+
+def test_curvature_sign_convex_positive():
+    z = _ridge()
+    c = micromet.curvature(z, 10.0, length_scale=100.0)
+    mid = z.shape[1] // 2
+    assert c[120, mid] > 0                      # crest is convex
+    assert c[120, mid - 40] < 0                 # the flank-to-plain hollow is concave
+
+
+def test_curvature_does_not_wrap_at_the_array_edge():
+    """A wrapped neighbour imports terrain from the far side of the window.
+
+    The Avonside farm mask touches the bottom edge of its DEM window, so this
+    is not hypothetical: wrapping corrupted 13% of farm cells by up to 0.294
+    against a true field range of 0.122.  A ramp has zero curvature throughout
+    its interior.  Edge replication still leaves a small residual in the
+    boundary band -- the replicated neighbour flattens, which is the honest
+    answer where there is no data beyond the edge -- but wrapping imports
+    terrain from the far side and the residual is four times larger.
+    """
+    n, res, k = 81, 10.0, 20
+    ramp = np.tile(np.arange(n)[:, None] * 3.0, (1, n))      # rises to the south
+    c = micromet.curvature(ramp, res, length_scale=k * res)
+    assert np.abs(c[k + 1:-k - 1]).max() == pytest.approx(0.0, abs=1e-12)
+    assert np.abs(c[0]).max() < 0.05
+
+    def _wrapped(z):
+        out = np.zeros_like(z)
+        for dr, dc in ((0, k), (k, 0), (k, k), (k, -k)):
+            zp = np.roll(np.roll(z, -dr, 0), -dc, 1)
+            zm = np.roll(np.roll(z, dr, 0), dc, 1)
+            out += (z - 0.5 * (zp + zm)) / (2.0 * np.hypot(dr, dc) * res)
+        return out / 4.0
+
+    assert np.abs(_wrapped(ramp)[0]).max() > 3 * np.abs(c[0]).max()
+
+
+def test_micromet_windward_exceeds_lee_on_a_symmetric_ridge():
+    z = _ridge()
+    res, mid = 10.0, z.shape[1] // 2
+    W = micromet.micromet_weight(z, res, [270.0], length_scale=100.0)   # wind from the west
+    west_face, east_face = W[120, mid - 15], W[120, mid + 15]
+    assert west_face > 1.0 > east_face
+    # and the asymmetry must reverse with the wind
+    We = micromet.micromet_weight(z, res, [90.0], length_scale=100.0)
+    assert We[120, mid + 15] > 1.0 > We[120, mid - 15]
+    assert We[120, mid + 15] == pytest.approx(west_face, rel=1e-6)
+
+
+def test_micromet_stays_within_the_published_bounds():
+    # gamma_slope + gamma_curvature = 1 and both Omegas are scaled to +/-0.5,
+    # so the multiplier cannot leave [0.5, 1.5] whatever the terrain.
+    z = _ridge(height=400.0, half_width=80.0)
+    W = micromet.micromet_weight(z, 10.0, [270.0, 315.0], [0.6, 0.4])
+    assert W.min() >= 0.5 and W.max() <= 1.5
+
+
+def test_micromet_normalises_the_rose_weights():
+    # A real wind rose rarely sums to 1 (ours sums to 0.977).  The result must
+    # not depend on that, or every multiplier is silently scaled down.
+    z = _ridge()
+    raw = [0.493, 0.395, 0.038, 0.030, 0.021]
+    brg = [292.5, 315.0, 270.0, 337.5, 225.0]
+    a = micromet.micromet_weight(z, 10.0, brg, raw)
+    b = micromet.micromet_weight(z, 10.0, brg, np.array(raw) / sum(raw))
+    assert np.allclose(a, b, atol=1e-12)
+    assert abs(np.median(a) - 1.0) < 0.2        # centred near 1, not near 0.977
+
+
+def test_micromet_scale_mask_changes_the_normalisation():
+    # The scaling is domain-dependent by construction; the mask is how you
+    # keep a padded window's extreme cells from setting it for the farm.
+    # Mask a flank well away from the crest, so the masked region's maximum
+    # slope and curvature are genuinely smaller than the whole window's.
+    z = _ridge()
+    m = np.zeros(z.shape, bool); m[100:140, 10:40] = True
+    full = micromet.micromet_weight(z, 10.0, [270.0], length_scale=100.0)
+    masked = micromet.micromet_weight(z, 10.0, [270.0], length_scale=100.0, scale_mask=m)
+    assert not np.allclose(full[m], masked[m])
+    # the masked normalisation must spread that region over a wider range
+    assert np.ptp(masked[m]) > np.ptp(full[m])
+
+
+def test_micromet_rejects_a_flat_dem():
+    with pytest.raises(ValueError):
+        micromet.micromet_weight(np.zeros((30, 30)), 10.0, [270.0])
+
+
+def test_micromet_rejects_mismatched_weights():
+    with pytest.raises(ValueError):
+        micromet.micromet_weight(_ridge(), 10.0, [270.0, 315.0], [1.0])
