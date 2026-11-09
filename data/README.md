@@ -1,61 +1,7 @@
-# Wind forcing — BARRA-C2 at the Avonside grid cell
+# Climate forcing — SILO daily at the Avonside grid cell
 
-A small real-world test dataset for the wind side of the demand model.
-
-## `barra_avonside_20y_20min.npz` (3.3 MB)
-
-Twenty years of near-surface wind at one BARRA-C2 grid cell, 20-minute steps.
-
-| key | meaning |
-|---|---|
-| `time` | POSIX seconds, **UTC**, 525,960 steps at exactly 1200 s |
-| `uas`, `vas` | eastward and northward wind at 10 m, m s⁻¹ |
-| `ua50m`, `va50m` | the same at 50 m, m s⁻¹ |
-| `lat`, `lon` | −36.45, 148.74 — the grid cell, ~1.7 km from the farm centroid |
-
-2006-01-01 to 2025-12-31 inclusive. 100% finite, no gaps, no duplicates.
-
-```python
-import numpy as np
-d = np.load("barra_avonside_20y_20min.npz")
-speed = np.hypot(d["uas"], d["vas"])                              # m/s at 10 m
-drct  = (270 - np.degrees(np.arctan2(d["vas"], d["uas"]))) % 360  # deg the wind comes FROM
-```
-
-### Three things that will bite you
-
-**Times are UTC.** Add 10 hours for AEST before any diurnal analysis, or the
-afternoon wind maximum lands at dawn. AEST rather than AEDT avoids a
-daylight-saving discontinuity mid-year, at the cost of the first 10 hours of
-1 January belonging to the previous year's file.
-
-**Direction is circular.** Never average degrees — average the `uas`/`vas`
-components, or use circular statistics. Plot with a *cyclic* colormap. Note too
-that the vector-mean speed is not the scalar-mean speed; their ratio is the
-directional constancy, which here runs from 0.06 in summer to 0.43 in winter.
-
-**It is a 4.4 km grid cell, not your paddock.** It resolves valley-scale
-channelling but knows nothing about a ridge or a gully. Terrain redistribution
-at farm scale is a separate problem.
-
-### Having two heights is the useful part
-
-10 m and 50 m together invert the neutral log profile for an effective
-roughness length, `z0 = exp[(ln z2 − r·ln z1)/(1 − r)]` with `r = u50/u10`.
-Here the median ratio is 1.515, giving **z0 ≈ 0.44 m** — more than ten times
-rougher than short grass. Restricting to near-neutral windy midday steps gives
-1.498 and 0.40 m.
-
-Fit that only on near-neutral steps. The ratio is 1.473 at midday and 1.573 at
-night across all speeds, which would invert to 0.33 m and 0.60 m — the ground
-does not get rougher after dark, that is the stable nocturnal boundary layer
-decoupling the surface from the air above.
-
-Two caveats worth stating in anything published. These are BARRA's own
-diagnostic levels, so the inversion recovers *the model's* effective roughness,
-a property of its land-surface configuration rather than an independent
-measurement. And a 4.4 km cell aggregates vegetation with sub-grid orography,
-so the number cannot be attributed to trees.
+A small real-world test dataset for the demand model: the time axis that the 3 m
+terrain supplies the map for.
 
 ## `silo_avonside_20y_daily.npz` (0.19 MB)
 
@@ -114,56 +60,10 @@ registered email as the `username` parameter; register your own at
 Department of Environment, Science and Innovation; see that page for licence
 and citation. Nothing here is endorsed by them.
 
-## Supporting tables
+## Wind
 
-- `barra_wind_2025_20min.csv` — 2025 only, 26,250 rows, local AEST timestamps
-  with speed, direction and the raw components. Convenient for plotting.
-- `wind_weibull_2025.csv` — Weibull shape `k` and scale `c` by season and
-  6-hour block, with mean speed and the modelled fraction of hours above
-  30 km/h. Fitted on 2025 alone; the tail behaviour needs the full 20 years
-  before anyone leans on it.
-
-## Provenance and attribution
-
-Derived from the **Bureau of Meteorology Atmospheric high-resolution Regional
-Reanalysis for Australia, version 2 (BARRA2)**, model BARRA-C2 on the AUST-04
-grid, obtained from the National Computing Infrastructure (NCI) THREDDS server.
-
-- Dataset DOI and licence terms: <https://doi.org/10.25914/1x6g-2v48>
-- Data governance contact: `data_governance_office@bom.gov.au`
-- NCI project: `ob53`
-
-This file is a **single-point extract** redistributed for convenience and
-testing. It is not a Bureau of Meteorology product and has not been endorsed by
-the Bureau. Anyone using it in publication should go to the DOI above for the
-licence and citation, and should consider pulling their own extract with
-`fetch_barra_point.py` — it takes about half an hour.
-
-## Regional terrain
-
-`snowy_monaro_dem30_mga55.tif` — 4226 × 4425 cells at 30 m in MGA zone 55
-(EPSG:28355), 133 × 127 km, 195 to 2226 m, covering the Main Range, the Snowy
-and Eucumbene valleys and the Monaro tableland. 21 MB, DEFLATE-compressed,
-tiled, stored as Int16 **decimetres** with a scale factor of 0.1 — any GDAL
-reader applies it, but a reader that ignores scaling will be out by a factor of
-ten, so check your first value. Nodata is `-32768` and covers 0.009% of cells.
-
-It exists because the airborne LiDAR at 845 Avonside covers only 4 × 2 km,
-which runs out after about 2 km of upwind fetch. Anything asking what the air
-crossed before it arrived — the 41 km to Mt Kosciuszko, the Snowy–Eucumbene
-corridor — needs this instead. At 30 m it is far too coarse for farm-scale
-work; use the LiDAR for that.
-
-Regenerate or re-window it with `fetch_copernicus_dem.py`, which downloads nine
-1° tiles, mosaics, reprojects and trims the rotation nodata. About two minutes
-on a decent connection.
-
-Derived from the **Copernicus GLO-30 Digital Elevation Model** (ESA / Airbus
-Defence and Space), free to use with attribution. This GeoTIFF is a convenience
-extract, not an endorsed product.
-
-A caution the numbers earned: all of the wind shelter at this site comes from
-terrain within 1 km. Averaged over the 292–338° gale sector the full 60 km
-horizon angle is 18.38°, and the terrain within 1 km alone gives 18.38° — the
-same number. Everything beyond 25 km, the Main Range included, contributes
-1.4°. This DEM is for air-mass history, not for shelter.
+The twenty-year BARRA-C2 wind archive for the same cell, the regional 30 m DEM for
+upwind fetch, and the fitted gust and harmonic tables now live with the code that
+uses them, in
+[`pyterrainwind`](https://github.com/jborevitz/pyterrainwind/tree/main/data).
+Nothing in this package reads them.
