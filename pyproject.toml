@@ -7,7 +7,7 @@ name = "pyterrainsol"
 version = "0.2.0"
 description = "Terrain-corrected solar radiation, PAR and daily light integral"
 requires-python = ">=3.10"
-license = {text = "AGPL-3.0-or-later"}
+license = {text = "MIT"}
 dependencies = ["numpy>=1.24", "scipy>=1.10"]
 
 [project.optional-dependencies]
